@@ -1,52 +1,72 @@
-import { useState, useRef } from 'react';
-import './App.css';
-import Col from './components/Col'
-import Row from './components/Row'
-import H1 from './components/H1'
-import P from './components/P'
-import Button from './components/Button'
-import GridComponent from './components/GridComponent'
-import GridContainer from './components/GridContainer'
-import Title from './components/Title'
+import { useState } from 'react';
+import { DEFAULT_INTERVAL, nextGeneration, randomGrid } from './game-of-life';
 import LivingCell from './types/LivingCell';
-import { DEFAULT_COLS, DEFAULT_INTERVAL, DEFAULT_ROWS, nextGeneration, randomGrid } from './game-of-life';
+
+import { Col, Title, H1, P, Row, SliderContainer, Button, GridContainer } from './styled-components';
+import { GridComponent } from './components';
+
 
 const App = () => {
-  let [cols, setCols] = useState(DEFAULT_COLS);
-  let [rows, setRows] = useState(DEFAULT_ROWS);
+  let [cols, setCols] = useState(75);
+  let [rows, setRows] = useState(75);
   let [world, setWorld] = useState(randomGrid(rows, cols));
-  let [ticks, setTicks] = useState(0);
+  let [counter, setCounter] = useState(0);
   let [running, setRunning] = useState(false);
+  let interval: ReturnType<typeof setInterval>;
 
-  let runningRef = useRef(running); 
-  runningRef.current = running;
+  const onNext = () => {
+    setWorld(nextGeneration(world))
+    setCounter(counter + 1)
+  }
 
-  let ticksRef = useRef(ticks);
-  ticksRef.current = ticks;
+  const togglePlay = () => {
+    if (running) {
+      clearInterval(interval);
+    }
 
-  const nextTick = useCallback(
-    () => {
-      if (!runningRef.current) {
-        return;
-      }
+    if (!running) {
+      interval = setInterval(onNext, DEFAULT_INTERVAL);
+    }
 
-      setInterval
-    },
-    [a, b],
-  ); // runs when value of input changes
-  // refs do not notify on update on own
+    setRunning(!running)
+  }
+
+  const onClear = () => {
+    setWorld(new Set<LivingCell>())
+  }
 
   return (
     <div className="App">
       <Col>
-
         <Title>
           <H1>
             Game of Life
           </H1>
           <P>
-            A cellular automaton devised by the British mathematician John Horton Conway
+            Cellular automaton game devised by the British mathematician John Horton Conway
           </P>
+          <P>
+          </P>
+          <Row>
+            Size:
+            <SliderContainer>
+              <input 
+                name="gridSizeSlider" 
+                type="range" 
+                min={75} 
+                max={175}
+                value={cols}
+                onChange={
+                  (event) => {
+                    let value: number = Math.min(+event.target.value, 175);
+                    setCols(value)
+                    setRows(value)
+                  }
+                } 
+              />
+            </SliderContainer>
+            { cols }
+          </Row>
         </Title>
 
         <Row>
@@ -58,16 +78,21 @@ const App = () => {
             />
           </GridContainer>
         </Row>
-        
+
         <Row>
           <Button
-            onClick={() => setRunning(!running)}
-          > { running ? "Pause" : "Play" || "Play"  } </Button>
+            onClick={togglePlay}
+          > { running ? "Pause" : "Play" } </Button>
 
           <Button
-            onClick={() => world = nextGeneration(world)}
+            onClick={onNext}
           > Next </Button>
 
+          <Button
+            onClick={onClear}
+          >
+            Clear
+          </Button>
         </Row>
       </Col>
     </div>
